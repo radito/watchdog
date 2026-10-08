@@ -1,8 +1,7 @@
 # watchdog
 
-A minimal KernelSU module by **radito** that requests a normal Android reboot after a set
-duration of screen-off inactivity. Default: **6 hours**, checked every **60 seconds**,
-starting **5 minutes after boot completes**.
+A KernelSU module that reboots your phone after a set duration of screen-off
+inactivity. Default: **6 hours**.
 
 ## Why reboot? AFU, BFU, and data access
 
@@ -47,86 +46,43 @@ device-specific exploits. Automatic reboot is also used to put data at rest in
 
 ## Install
 
-1. Run `npm ci` and `npm run module` to create `dist/watchdog-1.3.0.zip`.
-2. Install the ZIP from KernelSU Manager's Modules page, then reboot.
-3. Open the module WebUI in KernelSU Manager, change settings, and tap Save.
-   The running service applies changes at its next check and resets the idle timer.
-   Boot delay changes apply on the next boot. No module rebuild is needed.
-   Settings inside the module may be replaced by reinstalling or updating it.
+1. Download `watchdog-1.3.0.zip` from [Releases](https://github.com/radito/watchdog/releases/latest).
+2. Install it in **KernelSU Manager → Modules**, then reboot.
+3. Open the module's **WebUI**, adjust your settings on **Home**, and tap **Save**.
 
-## Settings page and browser preview
+## Settings
 
-The interface uses Vue 3 and [miuix-vue](https://github.com/YuKongA/miuix-vue)
-for MIUIX cards, buttons, switches, and sliders. Font sizes and spacing match the
-[MIUIX demo](https://yukonga.github.io/miuix-vue/). MiSans VF loads from the same
-Xiaomi CDN as that demo; no font files are bundled. When offline, system fonts
-provide a fallback. The sun/moon toggle selects light or dark mode and remembers
-your choice; before a choice is saved, the page follows the system theme.
-Use **Node.js 24 or newer** (also recorded in `.node-version`).
+| Setting | What it does | Default |
+| --- | --- | --- |
+| Inactivity duration | Screen-off time before rebooting. | 6 hours |
+| Check every | How often the phone's screen state is checked. | 60 seconds |
+| Boot delay | Wait before monitoring after boot completes. | 5 minutes |
+| Dry run | Log when a reboot would happen, without rebooting. | Off |
+
+Saving applies changes at the next check and resets the countdown. Boot delay
+changes apply on the next boot. Updating or reinstalling may reset your settings.
+
+**Preview** simulates the countdown at 360× speed; it never reboots your phone.
+Use the sun/moon toggle to switch between light and dark mode.
+
+## Logs and stopping
+
+Enable **Dry run** and save to check behavior before allowing reboots. Logs:
+`/data/adb/modules/inactivity_reboot/watchdog.log`.
+
+Disable or remove the module in KernelSU Manager to stop it. Re-enabling requires
+a reboot.
+
+## Build and browser preview
+
+Requires **Node.js 24 or newer**.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173`. Set the duration, polling interval, boot delay, and
-dry-run mode on **Home**. Use the bottom navigation to open **Preview**.
-The interactive countdown simulates screen-off time at 360× speed;
-use the slider to jump ahead or turn the simulated screen on to reset it.
-It never controls or reboots a connected phone. Switching back to Home pauses
-the simulation and keeps its position; changing settings resets the preview.
+Open [localhost:5173](http://127.0.0.1:5173) to try the UI. Browser changes do not
+control your phone; save device settings in KernelSU Manager.
 
-The browser page is a settings and countdown preview. On the phone, open the
-installed module's **WebUI** in KernelSU Manager to read and save its actual
-configuration. Changes apply at the next polling check, including to a service
-that is already running; no export, module rebuild, or phone reboot is required.
-Each configuration change resets the countdown. Boot delay applies on next boot.
-
-The interface uses the official [KernelSU WebUI API](https://kernelsu.org/guide/module-webui.html).
-If device settings cannot be read, saving is blocked until loading succeeds.
-
-`npm run build` compiles the page into `webroot/`, which is included in the
-module ZIP. `npm run preview` serves the compiled page locally. The installed
-WebUI settings and controls work offline, using a system font fallback; npm and
-Node.js are only needed on your development computer.
-
-Example: reboot after 2 hours of inactivity:
-
-```sh
-INACTIVE_MINUTES=120
-CHECK_INTERVAL=60
-BOOT_GRACE_SECONDS=300
-DRY_RUN=0
-```
-
-`INACTIVE_MINUTES`: 1–43200. `CHECK_INTERVAL`: 5–3600 seconds.
-`BOOT_GRACE_SECONDS`: 0–86400. `DRY_RUN`: 0 or 1. Use whole decimal numbers
-without leading zeroes. Invalid settings stop the service.
-
-## What counts as inactive?
-
-Android must report `Asleep` or `Dozing` in `dumpsys power`; dozing includes
-always-on display. `Awake`, `Dreaming`, or an unreadable power state reset the
-countdown. A changed last-wake timestamp also resets it, catching screen wakes
-that happen between polls. The timer starts at the first idle observation,
-starts fresh after every boot, and is checked again immediately before reboot.
-
-This measures screen inactivity. It does **not** detect ongoing calls, music,
-downloads, or other work with the screen off. Any screen wake, including a
-notification, restarts the timer. ROMs that do not expose the expected fields
-will not trigger a reboot.
-
-The service uses no wake lock or exact alarm. Deep sleep can delay polling and
-reboot until the CPU wakes naturally; this is a duration threshold, not a precise
-alarm. Suspend time counts toward the duration; changing the clock does not.
-
-## Check behavior or stop
-
-Enable **Dry run** in the installed WebUI and save to log when a reboot would
-occur. You can also edit the installed `config.sh`; the service reloads it at the
-next check. Logs are at
-`/data/adb/modules/inactivity_reboot/watchdog.log`, with one rotated backup.
-
-Disable or remove the module in KernelSU Manager. The running service exits on
-its next check. Re-enabling requires a reboot. The module requests a graceful
-reboot via `svc power reboot` and stops if that request returns.
+Run `npm run module` to build the installable ZIP in `dist/`.
