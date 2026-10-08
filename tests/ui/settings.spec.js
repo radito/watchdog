@@ -195,12 +195,12 @@ test("light and dark toggle follows system initially and persists an explicit ch
   await expect(page.locator("html")).toHaveClass(/m-theme-dark/);
 });
 
-test("MiSans is loaded through the same CDN as the reference demo", async ({
+test("MiSans is loaded through jsDelivr", async ({
   page,
 }) => {
   await page.goto("/");
   await expect(
-    page.locator('link[rel="stylesheet"][href*="cdn-font.hyperos.mi.com"]'),
+    page.locator('link[rel="stylesheet"][href="https://cdn.jsdelivr.net/npm/misans@5.0.0/lib/Normal/MiSansVF.min.css"]'),
   ).toHaveCount(1);
   expect(
     await page
