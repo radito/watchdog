@@ -1,0 +1,6 @@
+id=inactivity_reboot
+name=watchdog
+version=1.3.0
+versionCode=4
+author=radito
+description=Reboot after a configurable duration of screen-off inactivity.
